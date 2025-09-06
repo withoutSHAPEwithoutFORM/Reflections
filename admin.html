@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Admin Portal</title>
+    <style>
+      @font-face {
+        font-family: "WSWF";
+        font-weight: normal;
+        font-style: normal;
+        src: url(https://static1.squarespace.com/static/67e2ec427693384efd32fd14/t/67e2ef48ad3fd24bbab4c2ae/1742925640408/WWM_Century_Proportional.otf)
+          format("opentype");
+      }
+      * {
+        font-family: "WSWF" !important;
+      }
+      body {
+        background-image: url("background2.png");
+        margin: 0;
+        height: 600px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      .hidden {
+        display: none;
+      }
+      .btn-primary {
+        background: black;
+        color: #fff;
+        border: none;
+        padding: 12px 20px;
+        font-size: 16px;
+        border-radius: 2px;
+        cursor: pointer;
+        margin-top: 15px;
+        margin-right: 8px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+      }
+      table,
+      th,
+      td {
+        border: 1px solid #ccc;
+      }
+      th,
+      td {
+        padding: 8px;
+        text-align: left;
+      }
+      #dashboard {
+        margin: 30px auto;
+        padding: 15px;
+        background: #fafafa;
+        border-radius: 10px;
+        border: 1px solid #ddd;
+        width: 90%;
+        max-width: 900px;
+      }
+      #login {
+        text-align: center;
+      }
+      #login h2 {
+        font-size: 28px;
+        margin-bottom: 20px;
+      }
+      #login label {
+        font-size: 16px;
+      }
+      #login input {
+        width: 100%;
+        padding: 12px;
+        font-size: 16px;
+        margin-top: 5px;
+        border: 1px solid #bbb;
+        border-radius: 2px;
+      }
+      .name {
+        text-align: center;
+        font-size: 30px;
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="login">
+      <div class="name">Without SHAPE without FORM</div>
+      <h2>Admin Login</h2>
+      <label>Username:</label><br />
+      <input type="text" id="loginUser" /><br /><br />
+      <label>Password:</label><br />
+      <input type="password" id="loginPass" /><br /><br />
+      <button id="loginBtn" class="btn-primary">Login</button>
+      <p id="loginMsg" style="color: black"></p>
+    </div>
+
+    <div id="dashboard" class="hidden">
+      <h2>Reflections Consent / Recording Log</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Consent</th>
+            <th>File Name</th>
+            <th>Date</th>
+            <th>Timestamp</th>
+            <th>Recording</th>
+          </tr>
+        </thead>
+        <tbody id="csvTableBody"></tbody>
+      </table>
+      <div style="margin-top: 10px">
+        <button id="downloadCSVBtn" class="btn-primary">Download CSV</button>
+        <button id="resetLogsBtn" class="btn-primary" style="background: black">
+          Reset Logs
+        </button>
+      </div>
+    </div>
+
+    <script>
+      // === Admin Credentials ===
+      const ADMIN_USER = "wSwF";
+      const ADMIN_PASS = "Reflections";
+
+      let loginInProgress = false;
+
+      // === CSV Data ===
+      let csvData =
+        localStorage.getItem("csvData") ||
+        "Name,Consent,FileName,Date,Timestamp,RecordingLink\n";
+
+      // === IndexedDB setup ===
+      let db;
+      const request = indexedDB.open("recordingsDB", 1);
+      request.onupgradeneeded = (e) => {
+        db = e.target.result;
+        if (!db.objectStoreNames.contains("recordings")) {
+          db.createObjectStore("recordings", {
+            keyPath: "id",
+            autoIncrement: true,
+          });
+        }
+      };
+      request.onsuccess = (e) => {
+        db = e.target.result;
+        if (
+          !document.getElementById("dashboard").classList.contains("hidden")
+        ) {
+          renderCSVTable();
+        }
+      };
+      request.onerror = (e) =>
+        console.error("IndexedDB error:", e.target.error);
+
+      // === Render table (no duplicates) ===
+      function renderCSVTable() {
+        const tableBody = document.getElementById("csvTableBody");
+        tableBody.innerHTML = "";
+
+        const existingFilenames = new Set();
+
+        // Render CSV entries
+        const csvRows = csvData.trim().split("\n").slice(1);
+        csvRows.forEach((row) => {
+          if (!row.trim()) return;
+          const cols = row.split(",");
+          const filename = cols[2]?.trim();
+          if (filename) existingFilenames.add(filename);
+
+          const tr = document.createElement("tr");
+          cols.forEach((col, index) => {
+            const td = document.createElement("td");
+            if (index === 5 && col.startsWith("http")) {
+              const a = document.createElement("a");
+              a.href = col;
+              a.textContent = "Download Recording";
+              a.target = "_blank";
+              td.appendChild(a);
+            } else {
+              td.textContent = col || "-";
+            }
+            tr.appendChild(td);
+          });
+          tableBody.appendChild(tr);
+        });
+
+        // Render IndexedDB recordings
+        if (!db) return;
+        const transaction = db.transaction(["recordings"], "readonly");
+        const store = transaction.objectStore("recordings");
+        store.getAll().onsuccess = (event) => {
+          event.target.result.forEach((rec) => {
+            const consentNormalized = (rec.consent || "").toLowerCase().trim();
+            if (existingFilenames.has(rec.filename)) return; // skip duplicates
+
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+              <td>${rec.name || "Anonymous"}</td>
+              <td>${rec.consent || "No"}</td>
+              <td>${rec.filename || "-"}</td>
+              <td>${rec.date || "-"}</td>
+              <td>${rec.timestamp || "-"}</td>
+              <td>${
+                consentNormalized === "yes" && rec.blob
+                  ? `<button class="btn-primary" onclick="downloadIndexedDBRecording(${rec.id})">Download</button>`
+                  : "-"
+              }</td>
+            `;
+            tableBody.appendChild(tr);
+          });
+        };
+      }
+
+      // Download IndexedDB recording
+      function downloadIndexedDBRecording(id) {
+        const transaction = db.transaction(["recordings"], "readonly");
+        const store = transaction.objectStore("recordings");
+        store.get(id).onsuccess = (e) => {
+          const rec = e.target.result;
+          if (rec && rec.blob) {
+            const url = URL.createObjectURL(rec.blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = rec.filename || "recording.webm";
+            a.click();
+            URL.revokeObjectURL(url);
+          }
+        };
+      }
+
+      // Download CSV
+      function downloadCSV() {
+        const rows = [];
+        const table = document.querySelector("#dashboard table");
+        const headers = Array.from(table.querySelectorAll("thead th")).map(
+          (th) => th.textContent.trim()
+        );
+        rows.push(headers.join(","));
+
+        const transaction = db.transaction(["recordings"], "readonly");
+        const store = transaction.objectStore("recordings");
+        store.getAll().onsuccess = (event) => {
+          const recordings = event.target.result;
+          table.querySelectorAll("tbody tr").forEach((tr) => {
+            const cols = Array.from(tr.querySelectorAll("td")).map(
+              (td, colIndex) => {
+                const button = td.querySelector("button");
+                if (button) {
+                  const filename = tr.children[2].textContent.trim();
+                  const rec = recordings.find((r) => r.filename === filename);
+                  return rec && rec.blob ? URL.createObjectURL(rec.blob) : "-";
+                }
+                const link = td.querySelector("a");
+                return link ? link.href : td.textContent.trim();
+              }
+            );
+            rows.push(cols.join(","));
+          });
+
+          const csvContent = rows.join("\n");
+          const blob = new Blob([csvContent], { type: "text/csv" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "consent_data.csv";
+          a.click();
+          URL.revokeObjectURL(url);
+        };
+      }
+
+      // Reset logs
+      function resetLogs() {
+        if (confirm("Are you sure you want to delete all logs?")) {
+          csvData = "Name,Consent,FileName,Date,Timestamp,RecordingLink\n";
+          localStorage.setItem("csvData", csvData);
+          if (db) {
+            const transaction = db.transaction(["recordings"], "readwrite");
+            transaction.objectStore("recordings").clear();
+          }
+          renderCSVTable();
+        }
+      }
+
+      // Login logic
+      function checkLogin() {
+        if (loginInProgress) return;
+        loginInProgress = true;
+
+        const user = document.getElementById("loginUser").value.trim();
+        const pass = document.getElementById("loginPass").value.trim();
+        const msgEl = document.getElementById("loginMsg");
+
+        if (user === ADMIN_USER && pass === ADMIN_PASS) {
+          document.getElementById("login").classList.add("hidden");
+          document.getElementById("dashboard").classList.remove("hidden");
+          renderCSVTable();
+        } else {
+          msgEl.textContent = "Invalid username or password!";
+        }
+
+        setTimeout(() => (loginInProgress = false), 300);
+      }
+
+      // Attach event listeners
+      document.getElementById("loginBtn").addEventListener("click", (e) => {
+        e.preventDefault();
+        checkLogin();
+      });
+
+      document
+        .getElementById("downloadCSVBtn")
+        .addEventListener("click", downloadCSV);
+      document
+        .getElementById("resetLogsBtn")
+        .addEventListener("click", resetLogs);
+    </script>
+  </body>
+</html>
