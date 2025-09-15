@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reflection & Recording</title>
+
+    <!-- Include lamejs for MP3 encoding -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.0/lame.min.js"></script>
+
+    <!--start of CSS-->
+    <style>
+      @font-face {
+        font-family: "WSWF";
+        font-weight: normal;
+        font-style: normal;
+        src: url(https://static1.squarespace.com/static/67e2ec427693384efd32fd14/t/67e2ef48ad3fd24bbab4c2ae/1742925640408/WWM_Century_Proportional.otf)
+          format("opentype");
+      }
+
+      :root {
+        --heading-font-font-family: "WSWF";
+        --body-font-font-family: "WSWF";
+        --meta-font-font-family: "WSWF";
+        --primary-button-font-font-family: "WSWF";
+        --secondary-button-font-font-family: "WSWF";
+        --tertiary-button-font-font-family: "WSWF";
+        --site-title-font-font-family: "WSWF";
+      }
+
+      * {
+        font-family: "WSWF" !important;
+      }
+
+      body {
+        background-color: white;
+        color: #333;
+        height: 700px;
+        margin: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .container {
+        background: white;
+        border-radius: 12px;
+        padding: 30px 40px;
+        width: 980px;
+        height: 610px;
+        position: relative;
+        z-index: 1;
+      }
+
+      .tabs {
+        display: flex;
+        justify-content: space-between; /* left, middle, right distribution */
+        align-items: center;
+        width: 100%; /* take full container width */
+        margin-bottom: 20px;
+      }
+
+      .tab {
+        padding: 6px;
+        border-radius: 9px;
+        font-size: 17px;
+
+        color: #d3d3d3;
+      }
+
+      .tab.active {
+        color: black;
+      }
+
+      .middle-tabs {
+        display: flex;
+        justify-content: space-around;
+        flex: 1;
+        max-width: 700px;
+        margin: 0 auto;
+      }
+
+      .guided-flow {
+        font-size: 16px;
+        color: #333;
+        line-height: 1.4;
+        margin: 0;
+        padding: 0;
+      }
+
+      .guided-flow p {
+        margin: 0;
+        padding: 0;
+      }
+
+      .flow p {
+        margin: 0;
+        padding: 0;
+        line-height: 1.2;
+      }
+
+      .instructions {
+        line-height: 1.4;
+        margin: 20px 0;
+      }
+
+      .step {
+        margin-bottom: 8px;
+      }
+
+      .step-title {
+        margin-bottom: 4px;
+      }
+
+      .step-text {
+        margin: 0;
+        font-size: 22px;
+      }
+
+      .color {
+        color: grey;
+        font-size: 18px;
+      }
+      .name {
+        font-size: 18px;
+      }
+
+      .button-gap {
+        display: flex;
+        gap: 378px;
+        border-radius: 1px;
+        padding: 8px 16px;
+        white-space: nowrap;
+        text-align: center;
+        margin-top: 40px;
+      }
+
+      .button-down-colour {
+        margin-top: 269px;
+        color: white;
+        padding: 12px 20px;
+        background-color: #0a0a0f;
+        border-radius: 0px;
+        float: left;
+        height: 70px;
+        width: 160px;
+        font-size: 21px;
+        text-align: center;
+      }
+
+      button {
+        padding: 10px;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        cursor: pointer;
+      }
+
+      .btn-primary {
+        background: black;
+        color: white;
+        border-radius: 2px;
+        padding: 15px 15px;
+        margin-left: 0;
+      }
+
+      .begin {
+        background: black;
+        color: white;
+        border-radius: 2px;
+        padding: 15px 15px;
+        margin-left: 0;
+        margin-top: 30px;
+        height: 70px;
+        width: 130px;
+        font-size: 21px;
+        text-align: center;
+      }
+
+      .agree-btn {
+        margin-top: 30px;
+        float: left;
+        font-size: 21px;
+      }
+
+      .disagree-btn {
+        margin-top: 30px;
+        float: right;
+        background: #f3f3f3;
+        color: black;
+        font-size: 21px;
+        margin-right: 85px;
+      }
+
+      .agree-btn {
+        width: 230px;
+        height: 70px;
+      }
+
+      .disagree-btn {
+        width: 330px;
+        height: 70px;
+      }
+
+      .font {
+        font-size: 21px;
+        margin-left: 0;
+        padding-left: 0;
+      }
+
+      .sizing {
+        font-size: 21px;
+        margin-left: 0;
+        padding-left: 0;
+      }
+
+      input[type="text"] {
+        width: 100%;
+        padding: 8px 0;
+        border: none;
+        border-bottom: 2px solid #333;
+        background: transparent;
+        font-size: 18px;
+        outline: none;
+        margin: 10px 0;
+        transition: border-color 0.3s;
+      }
+
+      input[type="text"]:focus {
+        border-bottom: 2px solid black;
+      }
+
+      .screen {
+        width: 50%;
+        height: 1px;
+        margin: 10px auto;
+      }
+
+      #timer-display {
+        position: absolute;
+        right: 5px;
+        bottom: 179px;
+        font-size: 18px;
+      }
+
+      .progress-bar {
+        position: absolute;
+        bottom: 50px;
+        left: 9px;
+        right: 0px;
+        height: 8px;
+        background: #eee;
+        border-radius: 5px;
+        overflow: hidden;
+        bottom: 165px;
+      }
+
+      .progress {
+        height: 100%;
+        background: black;
+        width: 0%;
+        transition: width 0.3s;
+      }
+
+      .skip-btn {
+        position: absolute;
+        bottom: 78px;
+        margin-left: 275px;
+        background: #f3f3f3;
+        padding: 10px 16px;
+        border-radius: 2px;
+        cursor: pointer;
+        height: 70px;
+        width: 130px;
+        color: black;
+        font-size: 21px;
+      }
+
+      #recordBtn {
+        position: absolute;
+        bottom: 5px;
+        left: 40px;
+        font-size: 21px;
+        width: 220px;
+      }
+
+      .start-record,
+      .stop-record {
+        background: black;
+        color: white;
+        padding: 12px;
+        font-size: 1rem;
+        border-radius: 2px;
+        width: 165px;
+        height: 70px;
+        position: absolute;
+        bottom: -20px;
+        right: 40px;
+      }
+
+      .status {
+        font-size: 0.9rem;
+        color: #777;
+        margin-bottom: 8px;
+      }
+
+      .size {
+        font-size: 42px;
+        margin-left: 0;
+        padding-left: 0;
+        text-align: left;
+      }
+
+      .recording {
+        font-size: 30px;
+        margin-left: 0;
+        padding-left: 0;
+        text-align: left;
+      }
+      .thankyou {
+        font-size: 40px;
+        text-align: left;
+      }
+
+      #screen-welcome {
+        padding-left: 0;
+        margin-left: 0;
+      }
+
+      #screen-welcome .guided-flow,
+      #screen-welcome .instructions {
+        padding-left: 0;
+        margin-left: 0;
+      }
+
+      #screen-waiver {
+        padding-left: 0;
+        margin-left: 0;
+      }
+
+      #screen-welcome .guided-flow,
+      #screen-waiver .guided-flow,
+      #screen-reflection .guided-flow,
+      #screen-recording .guided-flow,
+      #screen-thankyou .guided-flow {
+        margin-top: 60px;
+      }
+      #screen-recording {
+        width: 900px;
+        background-size: cover;
+        background-position: top; /* move background image to top */
+        font-size: 21px;
+        padding-top: 20px; /* optional: adjust spacing at top */
+        text-align: left; /* align text like other screens */
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: flex-start;
+
+        padding-top: 0; /* remove extra spacing */
+        margin-top: 0; /* remove margin pushing it down */
+      }
+
+      #screen-waiver .name {
+        margin-top: 10px;
+        display: block;
+      }
+
+      #screen-waiver input[type="text"] {
+        width: 100%;
+        padding: 8px 0;
+        border: none;
+        border-bottom: 2px solid; /* solid black straight line */
+        background: transparent;
+        font-size: 18px;
+        outline: none;
+        margin: 10px 0;
+        box-shadow: inset 0 -2px 0 0;
+      }
+
+      #screen-reflection {
+        padding-left: 0;
+        margin-left: 0;
+        text-align: center;
+        position: relative;
+        height: 100%;
+      }
+
+      #screen-thankyou {
+        padding-left: 0;
+        margin-left: 0;
+        text-align: center;
+      }
+
+      #record-status {
+        display: none;
+      }
+
+      .progress-bar-recording {
+        position: absolute;
+        bottom: 150px;
+        left: 40px;
+        right: 40px;
+        height: 8px;
+        background: #eee;
+        border-radius: 5px;
+        overflow: hidden;
+      }
+
+      #record-progress {
+        height: 100%;
+        width: 0%;
+        background: black;
+        transition: width 0.3s;
+      }
+
+      #record-timer {
+        position: absolute;
+        right: 40px;
+        bottom: 157px;
+        font-size: 18px;
+      }
+
+      .slideshow-circle {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 500px; /* same width */
+        height: 500px; /* same height */
+        border-radius: 50%; /* ensures circle */
+        overflow: hidden; /* crops edges */
+        z-index: -1;
+
+        background: url("8.jpg") no-repeat center center;
+        background-size: cover; /* fills the circle properly */
+        background-position: center;
+        filter: blur(30px);
+      }
+
+      .start-again-btn {
+        width: 80px; /* grey box width */
+        height: 70px; /* grey box height */
+        background: #f3f3f3;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: absolute;
+        bottom: 10px;
+        right: 40px;
+        border-radius: 2px; /* optional, rounded edges */
+        cursor: pointer;
+      }
+
+      .start-again-btn img {
+        width: 24px; /* smaller icon */
+        height: 24px;
+        object-fit: contain;
+      }
+    </style>
+  </head>
+  <!--start of HTML-->
+  <body>
+    <div class="container">
+      <!-- refresh Image Button -->
+      <div
+        class="start-again-btn"
+        onclick="showScreen('welcome')"
+        id="start-again-btn"
+      >
+        <img src="refresh.png" alt="Start Again" />
+      </div>
+
+      <!--nav bar-->
+      <div class="tabs">
+        <div class="tab active" id="tab-welcome">Welcome</div>
+
+        <div class="middle-tabs">
+          <div class="tab" id="tab-waiver">Waiver</div>
+          <div class="tab" id="tab-reflection">Stillness</div>
+          <div class="tab" id="tab-recording">Recording</div>
+        </div>
+
+        <div class="tab" id="tab-thankyou">Thank you</div>
+      </div>
+      <!-- NEW BUTTON -->
+
+      <!-- Welcome -->
+      <div id="screen-welcome">
+        <div class="guided-flow">
+          <p class="font">
+            This is a space to PAUSE, REFLECT, and RECONNECT with stillness.
+          </p>
+          <p class="font">
+            In a world that rarely stops, we invite you to sit quietly with
+          </p>
+          <p class="font">
+            yourself for one minute. Notice what arises in the silence.
+          </p>
+          <br />
+          <p class="font">Can your mind become STILL?</p>
+          <br />
+          <p class="font">
+            You may choose to record a short reflection about your experience.
+          </p>
+          <p class="font">This is entirely optional.</p>
+        </div>
+
+        <div class="instructions">
+          <div class="step">
+            <div class="step-title"><span class="color">Step 1:</span></div>
+            <p class="step-text">
+              Read and sign the consent waiver or continue without recording.
+            </p>
+          </div>
+
+          <div class="step">
+            <div class="step-title"><span class="color">Step 2:</span></div>
+            <p class="step-text">Invitation to stillness.</p>
+          </div>
+
+          <div class="step">
+            <div class="step-title"><span class="color">Step 3:</span></div>
+            <p class="step-text">
+              If consent provided, you may record up to 3 minutes.
+            </p>
+          </div>
+        </div>
+        <button class="begin" onclick="showScreen('waiver')">Begin</button>
+      </div>
+
+      <!-- Waiver -->
+      <div id="screen-waiver" style="display: none">
+        <div class="guided-flow">
+          <p class="sizing">
+            I understand that my voice may be recorded at this experience.
+          </p>
+          <p class="sizing">
+            I give without SHAPE without FORM permission to use these recordings
+          </p>
+          <p class="sizing">
+            such as sharing, editing, or publishing, for any purpose (including
+          </p>
+
+          <p class="sizing">educational, promotional, or commercial).</p>
+          <br />
+          <p class="sizing">I know that:</p>
+          <p class="sizing">- I won’t be paid for the use of my voice.</p>
+          <p class="sizing">
+            - I won’t get to review or approve how the recording is used.
+          </p>
+
+          <p class="sizing">
+            - This permission has no time or location limits.
+
+            <br />
+          </p>
+
+          <p class="sizing">
+            <br />
+            By signing, I confirm I am at least 18 years old and agree to this
+            release.
+          </p>
+          <p class="sizing">
+            If I am under 18, my parent or guardian must sign
+          </p>
+        </div>
+        <br />
+        <input
+          type="text"
+          id="consentName"
+          placeholder="Type Your Name"
+          autocomplete="off"
+          required
+        />
+
+        <button class="btn-primary agree-btn" onclick="submitConsent()">
+          I agree and sign
+        </button>
+        <button
+          class="btn-primary disagree-btn"
+          onclick="goToReflection(false)"
+        >
+          I don't agree – reflect only
+        </button>
+      </div>
+
+      <!-- stillness -->
+      <div id="screen-reflection" style="display: none">
+        <div class="guided-flow">
+          <p class="size">Let your body become still for 1 minute</p>
+        </div>
+
+        <div id="timer-display">00:00/00:60</div>
+        <div class="progress-bar">
+          <div class="progress" id="progress"></div>
+        </div>
+        <button class="skip-btn" id="skipBtn">Skip</button>
+      </div>
+
+      <!-- Recording -->
+      <div id="screen-recording" style="display: none">
+        <div class="guided-flow">
+          <p class="recording">Record Your Reflection</p>
+          <br />
+          <p class="recording">What it felt like to sit still?</p>
+          <p class="recording">What thoughts or emotions came up?</p>
+          <p class="recording">Whether you were able to quiet your mind?</p>
+          <p class="recording">What you learned from this moment?</p>
+        </div>
+        <div class="slideshow-circle" id="slideshow"></div>
+        <div class="status" id="record-status"></div>
+        <div id="record-timer">00:00 / 03:00</div>
+        <div class="progress-bar-recording">
+          <div id="record-progress"></div>
+        </div>
+        <button id="recordBtn" class="start-record">Start recording</button>
+      </div>
+
+      <!-- Thank you -->
+      <div id="screen-thankyou" style="display: none">
+        <div class="background">
+          <div class="guided-flow">
+            <div class="screen"></div>
+            <p class="thankyou">Thank you.</p>
+            <br />
+            <p class="thankyou">We appreciate your time</p>
+            <p class="thankyou">and reflection.</p>
+          </div>
+
+          <button class="button-down-colour" onclick="showScreen('welcome')">
+            Start again
+          </button>
+        </div>
+      </div>
+    </div>
+    <!--Beep Sound -->
+    <audio
+      id="beepSound"
+      src="Reflections Timer Sound.mp3"
+      preload="auto"
+    ></audio>
+    <!--start of JavaScript-->
+    <script>
+      const tabs = {
+        welcome: document.getElementById("tab-welcome"),
+        waiver: document.getElementById("tab-waiver"),
+        reflection: document.getElementById("tab-reflection"),
+        recording: document.getElementById("tab-recording"),
+        thankyou: document.getElementById("tab-thankyou"),
+      };
+
+      const screens = {
+        welcome: document.getElementById("screen-welcome"),
+        waiver: document.getElementById("screen-waiver"),
+        reflection: document.getElementById("screen-reflection"),
+        recording: document.getElementById("screen-recording"),
+        thankyou: document.getElementById("screen-thankyou"),
+      };
+
+      let consentGiven = false;
+      let waiverTimeout;
+
+      // === IndexedDB ===
+      let db;
+      const request = indexedDB.open("recordingsDB", 1);
+      request.onupgradeneeded = (e) => {
+        db = e.target.result;
+        if (!db.objectStoreNames.contains("recordings")) {
+          db.createObjectStore("recordings", {
+            keyPath: "id",
+            autoIncrement: true,
+          });
+        }
+      };
+      request.onsuccess = (e) => (db = e.target.result);
+      request.onerror = (e) =>
+        console.error("IndexedDB error:", e.target.error);
+
+      // === Tab / Screen Logic ===
+      function setActiveTab(name) {
+        Object.values(tabs).forEach((t) => t.classList.remove("active"));
+        if (tabs[name]) tabs[name].classList.add("active");
+      }
+
+      function showScreen(name) {
+        Object.values(screens).forEach((s) => (s.style.display = "none"));
+        screens[name].style.display = "block";
+        setActiveTab(name);
+
+        const startAgainBtn = document.getElementById("start-again-btn");
+        if (name === "welcome") {
+          startAgainBtn.style.display = "none";
+          document.getElementById("consentName").value = "";
+          consentGiven = false;
+          resetRecordingUI();
+          resetReflectionUI();
+          window.isFallbackRecording = false;
+        } else {
+          startAgainBtn.style.display = "flex";
+        }
+
+        if (name === "waiver") {
+          clearTimeout(waiverTimeout);
+          waiverTimeout = setTimeout(() => {
+            showScreen("welcome");
+          }, 60000);
+        } else {
+          clearTimeout(waiverTimeout);
+        }
+
+        if (name === "thankyou") {
+          setTimeout(() => {
+            showScreen("welcome");
+          }, 15000);
+        }
+
+        if (name === "recording") startRecordingIdleTimer();
+        else clearTimeout(recordingIdleTimeout);
+      }
+
+      // === Reset Functions ===
+      function resetRecordingUI() {
+        document.getElementById("recordBtn").textContent = "Start recording";
+        document.getElementById("recordBtn").className = "start-record";
+        document.getElementById("record-progress").style.width = "0%";
+        document.getElementById("record-timer").textContent = "00:00 / 03:00";
+      }
+
+      function resetReflectionUI() {
+        clearInterval(reflectionTimerInterval);
+        timerDisplay.textContent = `00:00 / ${String(
+          (reflectionTime / 60) | 0
+        ).padStart(2, "0")}:${String(reflectionTime % 60).padStart(2, "0")}`;
+        progressBar.style.width = "0%";
+      }
+
+      // === Consent Form ===
+      function submitConsent() {
+        const consentInput = document.getElementById("consentName");
+        const name = consentInput.value.trim();
+        const existingError = document.getElementById("consent-error");
+        if (existingError) existingError.remove();
+
+        const validName = /^[A-Za-z\s]{3,}$/;
+        if (!validName.test(name)) {
+          consentInput.style.borderBottom = "2px solid red";
+          const errorMsg = document.createElement("div");
+          errorMsg.id = "consent-error";
+          errorMsg.innerText = "Please enter your name (at least 3 letters)";
+          errorMsg.style.color = "red";
+          errorMsg.style.fontSize = "16px";
+          errorMsg.style.marginTop = "5px";
+          consentInput.parentNode.insertBefore(
+            errorMsg,
+            consentInput.nextSibling
+          );
+          return;
+        }
+
+        consentInput.style.borderBottom = "2px solid #333";
+        goToReflection(true);
+      }
+
+      function removeError() {
+        this.style.borderBottom = "2px solid #333";
+        const existingError = document.getElementById("consent-error");
+        if (existingError) existingError.remove();
+        clearTimeout(waiverTimeout);
+      }
+
+      const consentInputField = document.getElementById("consentName");
+      consentInputField.addEventListener("input", removeError);
+      consentInputField.addEventListener("keyup", removeError);
+
+      consentInputField.addEventListener("keypress", function (e) {
+        if (!/[A-Za-z\s]/.test(String.fromCharCode(e.which)))
+          e.preventDefault();
+      });
+
+      function logConsent(name, consent, filename = "-") {
+        if (!db) return;
+        const now = new Date();
+        const transaction = db.transaction(["recordings"], "readwrite");
+        const store = transaction.objectStore("recordings");
+        store.add({
+          name: name || "Anonymous",
+          consent: consent ? "Yes" : "No",
+          filename: filename,
+          date: now.toLocaleDateString(),
+          timestamp: now.toLocaleTimeString(),
+          blob: consent ? null : null,
+        });
+      }
+
+      function goToReflection(withConsent) {
+        consentGiven = withConsent;
+        const name =
+          document.getElementById("consentName").value.trim() || "Anonymous";
+        if (!withConsent) logConsent(name, false);
+
+        showScreen("reflection");
+        setTimeout(startTimer, 3000);
+      }
+
+      // === Audio Beep ===
+      function playStartBeep() {
+        const audio = document.getElementById("beepSound");
+        audio.currentTime = 0;
+        audio.play();
+      }
+
+      function playEndBeep() {
+        const audio = document.getElementById("beepSound");
+        audio.currentTime = 0;
+        audio.play();
+      }
+
+      function unlockAudio() {
+        const audio = document.getElementById("beepSound");
+        if (!audio) return;
+
+        audio.volume = 0;
+        audio
+          .play()
+          .then(() => {
+            audio.pause();
+            audio.currentTime = 0;
+            audio.volume = 1;
+            console.log("iOS audio unlocked for later use");
+          })
+          .catch((err) => {
+            console.warn("Audio unlock failed:", err);
+          });
+      }
+
+      document.addEventListener("touchstart", unlockAudio, { once: true });
+      document.addEventListener("click", unlockAudio, { once: true });
+
+      // === Reflection Timer ===
+      let reflectionTime = 60;
+      let reflectionStartTime;
+      let reflectionTimerInterval;
+      const timerDisplay = document.getElementById("timer-display");
+      const progressBar = document.getElementById("progress");
+
+      function updateReflectionTimer() {
+        const elapsed = Math.floor((Date.now() - reflectionStartTime) / 1000);
+        let remaining = reflectionTime - elapsed;
+        if (remaining < 0) remaining = 0;
+
+        timerDisplay.textContent =
+          `${String((elapsed / 60) | 0).padStart(2, "0")}:${String(
+            elapsed % 60
+          ).padStart(2, "0")} / ` +
+          `${String((reflectionTime / 60) | 0).padStart(2, "0")}:${String(
+            reflectionTime % 60
+          ).padStart(2, "0")}`;
+
+        progressBar.style.width = `${(elapsed / reflectionTime) * 100}%`;
+
+        if (elapsed >= reflectionTime) {
+          clearInterval(reflectionTimerInterval);
+
+          if (screens.reflection.style.display !== "none") {
+            // ✅ Beep when timer ends
+            playEndBeep();
+
+            setTimeout(() => {
+              if (consentGiven) showScreen("recording");
+              else showScreen("thankyou");
+            }, 700);
+          }
+        }
+      }
+
+      function startTimer() {
+        reflectionStartTime = Date.now();
+        updateReflectionTimer();
+        clearInterval(reflectionTimerInterval);
+
+        // ✅ Beep at the start
+        playStartBeep();
+
+        reflectionTimerInterval = setInterval(updateReflectionTimer, 1000);
+      }
+
+      // === Recording Logic ===
+      let mediaRecorder,
+        audioChunks = [],
+        recordTimerInterval;
+      const maxRecordTime = 180;
+      const recordProgress = document.getElementById("record-progress");
+      let recordStartTime;
+
+      function updateRecordTimer() {
+        const elapsed = Math.floor((Date.now() - recordStartTime) / 1000);
+        if (elapsed >= maxRecordTime) {
+          stopRecording();
+          return;
+        }
+
+        document.getElementById("record-timer").textContent =
+          `${String((elapsed / 60) | 0).padStart(2, "0")}:${String(
+            elapsed % 60
+          ).padStart(2, "0")} / ` +
+          `${String((maxRecordTime / 60) | 0).padStart(2, "0")}:${String(
+            maxRecordTime % 60
+          ).padStart(2, "0")}`;
+
+        recordProgress.style.width = `${(elapsed / maxRecordTime) * 100}%`;
+      }
+
+      async function startOrStopRecording() {
+        const btn = document.getElementById("recordBtn");
+
+        if (btn.classList.contains("start-record")) {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            audio: true,
+          });
+
+          if (
+            typeof MediaRecorder !== "undefined" &&
+            MediaRecorder.isTypeSupported("audio/webm")
+          ) {
+            mediaRecorder = new MediaRecorder(stream, {
+              mimeType: "audio/webm",
+            });
+            audioChunks = [];
+
+            mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
+
+            mediaRecorder.onstop = () => {
+              const blob = new Blob(audioChunks, {
+                type: mediaRecorder.mimeType,
+              });
+              const consentName =
+                document.getElementById("consentName").value.trim() ||
+                "Anonymous";
+              saveRecordingOffline(consentName, blob, "webm");
+              logConsent(
+                consentName,
+                true,
+                consentName.replace(/[^a-z0-9]/gi, "_") +
+                  "_" +
+                  Date.now() +
+                  ".webm"
+              );
+              stream.getTracks().forEach((t) => t.stop());
+            };
+
+            mediaRecorder.start();
+          } else {
+            // Safari fallback
+            window.isFallbackRecording = true;
+            const audioCtx = new (window.AudioContext ||
+              window.webkitAudioContext)();
+            const source = audioCtx.createMediaStreamSource(stream);
+            const processor = audioCtx.createScriptProcessor(4096, 1, 1);
+            let buffers = [];
+            processor.onaudioprocess = (e) => {
+              if (window.isFallbackRecording)
+                buffers.push(new Float32Array(e.inputBuffer.getChannelData(0)));
+            };
+            source.connect(processor);
+            processor.connect(audioCtx.destination);
+
+            window.stopFallbackRecording = () => {
+              window.isFallbackRecording = false;
+              processor.disconnect();
+              source.disconnect();
+              const buffer = flattenArray(
+                buffers,
+                buffers.length * buffers[0].length
+              );
+              const wavBlob = encodeWAV(buffer, audioCtx.sampleRate);
+              const consentName =
+                document.getElementById("consentName").value.trim() ||
+                "Anonymous";
+              saveRecordingOffline(consentName, wavBlob, "wav");
+              logConsent(
+                consentName,
+                true,
+                consentName.replace(/[^a-z0-9]/gi, "_") +
+                  "_" +
+                  Date.now() +
+                  ".wav"
+              );
+              stream.getTracks().forEach((t) => t.stop());
+            };
+          }
+
+          recordStartTime = Date.now();
+          updateRecordTimer();
+          clearInterval(recordTimerInterval);
+          recordTimerInterval = setInterval(updateRecordTimer, 1000);
+
+          btn.textContent = "Stop recording";
+          btn.className = "stop-record";
+        } else {
+          stopRecording();
+        }
+      }
+
+      function stopRecording() {
+        clearInterval(recordTimerInterval);
+        showScreen("thankyou");
+
+        if (mediaRecorder && mediaRecorder.state !== "inactive")
+          mediaRecorder.stop();
+        if (window.isFallbackRecording) window.stopFallbackRecording();
+
+        resetRecordingUI();
+      }
+
+      function flattenArray(channelBuffer, length) {
+        const result = new Float32Array(length);
+        let offset = 0;
+        channelBuffer.forEach((buf) => {
+          result.set(buf, offset);
+          offset += buf.length;
+        });
+        return result;
+      }
+
+      function encodeWAV(samples, sampleRate) {
+        const buffer = new ArrayBuffer(44 + samples.length * 2);
+        const view = new DataView(buffer);
+        function writeString(v, o, s) {
+          for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i));
+        }
+        writeString(view, 0, "RIFF");
+        view.setUint32(4, 36 + samples.length * 2, true);
+        writeString(view, 8, "WAVE");
+        writeString(view, 12, "fmt ");
+        view.setUint32(16, 16, true);
+        view.setUint16(20, 1, true);
+        view.setUint16(22, 1, true);
+        view.setUint32(24, sampleRate, true);
+        view.setUint32(28, sampleRate * 2, true);
+        view.setUint16(32, 2, true);
+        view.setUint16(34, 16, true);
+        writeString(view, 36, "data");
+        view.setUint32(40, samples.length * 2, true);
+        let offset = 44;
+        for (let i = 0; i < samples.length; i++, offset += 2) {
+          let s = Math.max(-1, Math.min(1, samples[i]));
+          view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+        }
+        return new Blob([view], { type: "audio/wav" });
+      }
+
+      function saveRecordingOffline(name, blob, ext) {
+        if (!db) return;
+        const now = new Date();
+        const filename = `${name.replace(/[^a-z0-9]/gi, "_")}_${now
+          .toISOString()
+          .replace(/[:]/g, "-")}.${ext}`;
+        const transaction = db.transaction(["recordings"], "readwrite");
+        transaction.objectStore("recordings").add({
+          filename,
+          blob,
+          name,
+          date: now.toLocaleDateString(),
+          timestamp: now.toLocaleTimeString(),
+          consent: "Yes",
+        });
+        transaction.oncomplete = () => console.log(`Saved: ${filename}`);
+      }
+
+      function bindButton(id, handler) {
+        const el = document.getElementById(id);
+        ["pointerdown", "touchstart", "click"].forEach((ev) =>
+          el.addEventListener(ev, handler)
+        );
+      }
+
+      bindButton("skipBtn", () => {
+        clearInterval(reflectionTimerInterval);
+        if (consentGiven) showScreen("recording");
+        else showScreen("thankyou");
+      });
+
+      bindButton("recordBtn", () => {
+        startOrStopRecording();
+      });
+
+      // === Recording Page Idle Timeout ===
+      let recordingIdleTimeout;
+      const idleDuration = 60000;
+
+      function resetRecordingIdleTimer() {
+        clearTimeout(recordingIdleTimeout);
+        if (screens.recording.style.display !== "none") {
+          recordingIdleTimeout = setTimeout(() => {
+            showScreen("welcome");
+          }, idleDuration);
+        }
+      }
+
+      ["mousemove", "mousedown", "keypress", "touchstart", "scroll"].forEach(
+        (event) => {
+          document.addEventListener(event, resetRecordingIdleTimer, true);
+        }
+      );
+
+      function startRecordingIdleTimer() {
+        resetRecordingIdleTimer();
+      }
+
+      // === Init ===
+      resetReflectionUI();
+      showScreen("welcome");
+    </script>
+  </body>
+</html>

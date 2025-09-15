@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Admin Portal</title>
+    <style>
+      @font-face {
+        font-family: "WSWF";
+        font-weight: normal;
+        font-style: normal;
+        src: url(https://static1.squarespace.com/static/67e2ec427693384efd32fd14/t/67e2ef48ad3fd24bbab4c2ae/1742925640408/WWM_Century_Proportional.otf)
+          format("opentype");
+      }
+      * {
+        font-family: "WSWF" !important;
+      }
+      body {
+        background-image: url("background2.png");
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      .hidden {
+        display: none;
+      }
+      .btn-primary {
+        background: black;
+        color: #fff;
+        border: none;
+        padding: 12px 20px;
+        font-size: 16px;
+        border-radius: 2px;
+        cursor: pointer;
+        margin-top: 15px;
+        margin-right: 8px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+      }
+      table,
+      th,
+      td {
+        border: 1px solid #ccc;
+      }
+      th,
+      td {
+        padding: 8px;
+        text-align: left;
+      }
+      #dashboard {
+        margin: 30px auto;
+        padding: 15px;
+        background: #fafafa;
+        border-radius: 10px;
+        border: 1px solid #ddd;
+        width: 90%;
+        max-width: 900px;
+      }
+      #login {
+        text-align: center;
+      }
+      #login h2 {
+        font-size: 28px;
+        margin-bottom: 20px;
+      }
+      #login label {
+        font-size: 16px;
+      }
+      #login input {
+        width: 100%;
+        padding: 12px;
+        font-size: 16px;
+        margin-top: 5px;
+        border: 1px solid #bbb;
+        border-radius: 2px;
+      }
+      .name {
+        text-align: center;
+        font-size: 30px;
+        margin-top: 10px;
+      }
+      .note {
+        font-size: 13px;
+        color: #333;
+        margin-top: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="login">
+      <div class="name">Without SHAPE without FORM</div>
+      <h2>Admin Login</h2>
+      <label>Username:</label><br />
+      <input type="text" id="loginUser" autocomplete="username" /><br /><br />
+      <label>Password:</label><br />
+      <input
+        type="password"
+        id="loginPass"
+        autocomplete="current-password"
+      /><br /><br />
+      <button id="loginBtn" class="btn-primary">Login</button>
+      <p id="loginMsg" style="color: black"></p>
+    </div>
+
+    <div id="dashboard" class="hidden">
+      <h2>Reflections Consent / Recording Log</h2>
+
+      <!-- Back to Recorder -->
+      <button class="btn-primary" onclick="location.href='/index.html'">
+        ← Back to Recorder
+      </button>
+
+      <table aria-label="Consent and recordings table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Consent</th>
+            <th>File Name</th>
+            <th>Date</th>
+            <th>Timestamp</th>
+            <th>Recording</th>
+          </tr>
+        </thead>
+        <tbody id="csvTableBody"></tbody>
+      </table>
+      <div style="margin-top: 10px">
+        <button id="downloadCSVBtn" class="btn-primary">Download CSV</button>
+        <button id="resetLogsBtn" class="btn-primary" style="background: black">
+          Reset Logs
+        </button>
+      </div>
+      <p class="note" id="iosHint" style="display: none">
+        iPad/iPhone: recordings open in a new tab. Use Share → “Save to Files”.
+      </p>
+      <p class="note" id="storageNote" style="display: none">
+        IndexedDB not available. Some older browsers block it in private mode.
+      </p>
+    </div>
+
+    <script>
+      // ===== Admin Credentials =====
+      const ADMIN_USER = "wSwF";
+      const ADMIN_PASS = "Reflections";
+
+      // ===== Environment flags =====
+      const ua = navigator.userAgent || "";
+      const isIOS =
+        /iPad|iPhone|iPod/.test(ua) ||
+        (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+      const hasIndexedDB = !!window.indexedDB;
+
+      // ===== CSV Data =====
+      const CSV_HEADER = "Name,Consent,FileName,Date,Timestamp,RecordingLink\n";
+      let csvData = localStorage.getItem("csvData") || CSV_HEADER;
+
+      // ===== IndexedDB setup =====
+      let db = null;
+      function openDB() {
+        return new Promise((resolve) => {
+          if (!hasIndexedDB) {
+            resolve(null);
+            return;
+          }
+          let request;
+          try {
+            request = indexedDB.open("recordingsDB", 1);
+          } catch (e) {
+            resolve(null);
+            return;
+          }
+          request.onupgradeneeded = (e) => {
+            const _db = e.target.result;
+            if (!_db.objectStoreNames.contains("recordings")) {
+              _db.createObjectStore("recordings", {
+                keyPath: "id",
+                autoIncrement: true,
+              });
+            }
+          };
+          request.onsuccess = (e) => resolve(e.target.result);
+          request.onerror = () => resolve(null);
+        });
+      }
+
+      function consentOK(val) {
+        if (val === true) return true;
+        if (val === false || val == null) return false;
+        return String(val).trim().toLowerCase() === "yes";
+      }
+
+      async function renderCSVTable() {
+        const tableBody = document.getElementById("csvTableBody");
+        tableBody.innerHTML = "";
+
+        if (!db) return;
+        const tx = db.transaction(["recordings"], "readonly");
+        const store = tx.objectStore("recordings");
+        const req = store.getAll();
+        req.onsuccess = () => {
+          const all = req.result || [];
+          all.forEach((rec) => {
+            const tr = document.createElement("tr");
+            const allowDownload = consentOK(rec.consent) && !!rec.blob;
+            tr.innerHTML = `
+              <td>${rec.name || "Anonymous"}</td>
+              <td>${rec.consent != null ? rec.consent : "No"}</td>
+              <td>${rec.filename || "-"}</td>
+              <td>${rec.date || "-"}</td>
+              <td>${rec.timestamp || "-"}</td>
+              <td>${
+                allowDownload
+                  ? `<button class="btn-primary" data-id="${
+                      rec.id
+                    }" data-fn="${(rec.filename || "recording").replace(
+                      /"/g,
+                      ""
+                    )}">Download</button>`
+                  : "-"
+              }</td>
+            `;
+            tableBody.appendChild(tr);
+          });
+        };
+      }
+
+      function downloadIndexedDBRecording(id, filenameFallback) {
+        const tx = db.transaction(["recordings"], "readonly");
+        const store = tx.objectStore("recordings");
+        const req = store.get(id);
+        req.onsuccess = (e) => {
+          const rec = e.target.result;
+          if (!rec || !rec.blob) return;
+          const filename = rec.filename || filenameFallback || "recording.webm";
+          const blob = rec.blob;
+          try {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 5000);
+          } catch {
+            const reader = new FileReader();
+            reader.onload = () =>
+              window.open(reader.result, "_blank", "noopener");
+            reader.readAsDataURL(blob);
+          }
+        };
+      }
+
+      function downloadCSV() {
+        const table = document.querySelector("#dashboard table");
+        const headers = Array.from(table.querySelectorAll("thead th")).map(
+          (th) => th.textContent.trim()
+        );
+        const out = [headers.join(",")];
+        table.querySelectorAll("tbody tr").forEach((tr) => {
+          const cols = Array.from(tr.querySelectorAll("td")).map((td) =>
+            (td.textContent || "").trim()
+          );
+          out.push(cols.join(","));
+        });
+        const csvContent = out.join("\n");
+        const blob = new Blob([csvContent], { type: "text/csv" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "consent_data.csv";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+      }
+
+      function resetLogs() {
+        if (!confirm("Are you sure you want to delete all logs?")) return;
+        csvData = CSV_HEADER;
+        localStorage.setItem("csvData", csvData);
+        if (db) {
+          const tx = db.transaction(["recordings"], "readwrite");
+          tx.objectStore("recordings").clear();
+        }
+        renderCSVTable();
+      }
+
+      let loginInProgress = false;
+      function checkLogin() {
+        if (loginInProgress) return;
+        loginInProgress = true;
+        const user = document.getElementById("loginUser").value.trim();
+        const pass = document.getElementById("loginPass").value.trim();
+        const msgEl = document.getElementById("loginMsg");
+        if (user === ADMIN_USER && pass === ADMIN_PASS) {
+          document.getElementById("login").classList.add("hidden");
+          document.getElementById("dashboard").classList.remove("hidden");
+          renderCSVTable();
+        } else {
+          msgEl.textContent = "Invalid username or password!";
+        }
+        setTimeout(() => (loginInProgress = false), 300);
+      }
+
+      (async function init() {
+        db = await openDB();
+        if (!db) {
+          document.getElementById("storageNote").style.display = "block";
+        }
+      })();
+
+      document.getElementById("loginBtn").addEventListener("click", (e) => {
+        e.preventDefault();
+        checkLogin();
+      });
+      document
+        .getElementById("downloadCSVBtn")
+        .addEventListener("click", downloadCSV);
+      document
+        .getElementById("resetLogsBtn")
+        .addEventListener("click", resetLogs);
+      document.getElementById("csvTableBody").addEventListener("click", (e) => {
+        const btn = e.target.closest("button[data-id]");
+        if (!btn) return;
+        const id = Number(btn.getAttribute("data-id"));
+        const fn = btn.getAttribute("data-fn") || "recording.webm";
+        downloadIndexedDBRecording(id, fn);
+      });
+
+      // ===== Global floating Refresh button =====
+      (function () {
+        const btn = document.createElement("button");
+        btn.textContent = "↻";
+        btn.setAttribute("aria-label", "Refresh");
+        Object.assign(btn.style, {
+          position: "fixed",
+          right: "16px",
+          bottom: "16px",
+          width: "56px",
+          height: "56px",
+          borderRadius: "50%",
+          border: "none",
+          background: "#000",
+          color: "#fff",
+          fontSize: "20px",
+          fontWeight: "700",
+          boxShadow: "0 6px 16px rgba(0,0,0,.25)",
+          cursor: "pointer",
+          zIndex: "99999",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        });
+        document.body.appendChild(btn);
+        function hardReload() {
+          window.location.href =
+            window.location.origin +
+            window.location.pathname +
+            "?t=" +
+            Date.now();
+        }
+        btn.addEventListener("click", hardReload, { passive: true });
+      })();
+    </script>
+  </body>
+</html>
